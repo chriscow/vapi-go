@@ -1,4 +1,4 @@
-module github.com/chriscow/vapi
+module github.com/chriscow/vapi-go
 
 go 1.18
 
