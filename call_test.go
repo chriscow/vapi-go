@@ -86,39 +86,35 @@ func TestEndOfCallReport_Unmarshal(t *testing.T) {
 	}
 
 	// First unmarshal into a wrapper struct
-	var wrapper struct {
-		Message EndOfCallReport `json:"message"`
+	var report EndOfCallReport
+	if err := json.Unmarshal(fixtureData, &report); err != nil {
+		t.Fatalf("Failed to unmarshal EndOfCallReport: %v", err)
 	}
-	if err := json.Unmarshal(fixtureData, &wrapper); err != nil {
-		t.Fatalf("Failed to unmarshal EndOfCallReport wrapper: %v", err)
-	}
-
-	report := wrapper.Message
 
 	// Validate required fields are present
-	if report.Type == "" {
+	if report.Message.Type == "" {
 		t.Error("Type is required but was empty")
 	}
-	if report.EndedReason == "" {
+	if report.Message.EndedReason == "" {
 		t.Error("EndedReason is required but was empty")
 	}
-	if report.Artifact.Messages == nil {
+	if report.Message.Artifact.Messages == nil {
 		t.Error("Artifact.Messages is required but was nil")
 	}
-	if report.Analysis.Summary == nil {
+	if report.Message.Analysis.Summary == nil {
 		t.Error("Analysis.Summary is required but was empty")
 	}
 
-	summary := *report.Analysis.Summary
+	summary := *report.Message.Analysis.Summary
 	if len(summary) > 40 {
 		summary = summary[:40] + "..."
 	}
 	// Log useful information for debugging
-	t.Logf("Report Type: %s", report.Type)
-	t.Logf("Ended Reason: %s", report.EndedReason)
-	t.Logf("Number of Messages: %d", len(report.Artifact.Messages))
+	t.Logf("Report Type: %s", report.Message.Type)
+	t.Logf("Ended Reason: %s", report.Message.EndedReason)
+	t.Logf("Number of Messages: %d", len(report.Message.Artifact.Messages))
 	t.Logf("Analysis Summary: %s", summary)
-	if report.Cost != nil {
-		t.Logf("Call Cost: $%.2f", *report.Cost)
+	if report.Message.Cost != nil {
+		t.Logf("Call Cost: $%.2f", *report.Message.Cost)
 	}
 }

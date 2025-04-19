@@ -127,8 +127,8 @@ type CostBreakdown struct {
 // Analysis represents the analysis results of a call
 type Analysis struct {
 	Summary             *string         `json:"summary,omitempty"`
-	StructuredData      json.RawMessage `json:"structuredData,omitempty"`
-	StructuredDataMulti any             `json:"structuredDataMulti,omitempty"`
+	StructuredData      map[string]any  `json:"structuredData,omitempty"`
+	StructuredDataMulti json.RawMessage `json:"structuredDataMulti,omitempty"`
 	SuccessEvaluation   *string         `json:"successEvaluation,omitempty"`
 }
 
@@ -171,13 +171,13 @@ type Transport struct {
 
 // PhoneNumber represents phone number configuration
 type PhoneNumber struct {
-	TwilioAccountSid    string        `json:"twilioAccountSid"`
-	TwilioAuthToken     string        `json:"twilioAuthToken"`
-	TwilioPhoneNumber   string        `json:"twilioPhoneNumber"`
+	TwilioAccountSid    string        `json:"twilioAccountSid,omitempty"`
+	TwilioAuthToken     string        `json:"twilioAuthToken,omitempty"`
+	TwilioPhoneNumber   string        `json:"twilioPhoneNumber,omitempty"`
 	FallbackDestination *Destination  `json:"fallbackDestination,omitempty"`
-	Name                string        `json:"name,omitempty"`
-	AssistantID         string        `json:"assistantId,omitempty"`
-	SquadID             string        `json:"squadId,omitempty"`
+	Name                *string       `json:"name,omitempty"`
+	AssistantID         *string       `json:"assistantId,omitempty"`
+	SquadID             *string       `json:"squadId,omitempty"`
 	Server              *ServerConfig `json:"server,omitempty"`
 }
 
@@ -282,31 +282,4 @@ type Call struct {
 	CustomerID         *string        `json:"customerId,omitempty"`
 	Customer           *Customer      `json:"customer,omitempty"`
 	Name               *string        `json:"name,omitempty"`
-}
-
-// EndOfCallReport represents the report generated at the end of a call
-type EndOfCallReport struct {
-	Timestamp *float64  `json:"timestamp,omitempty"`
-	Type      string    `json:"type"`
-	Artifact  *Artifact `json:"artifact"`
-	Analysis  *Analysis `json:"analysis"`
-
-	// Optional fields
-	StartedAt   *time.Time `json:"startedAt,omitempty"`
-	EndedAt     *time.Time `json:"endedAt,omitempty"`
-	EndedReason string     `json:"endedReason"`
-	Cost        *float64   `json:"cost,omitempty"`
-	Costs       []Cost     `json:"costs,omitempty"`
-
-	Summary    *string `json:"summary,omitempty"`
-	Transcript *string `json:"transcript,omitempty"`
-
-	Messages           []Message    `json:"messages,omitempty"`
-	RecordingUrl       *string      `json:"recordingUrl,omitempty"`
-	StereoRecordingUrl *string      `json:"stereoRecordingUrl,omitempty"`
-	Call               *Call        `json:"call,omitempty"`
-	PhoneNumber        *PhoneNumber `json:"phoneNumber,omitempty"`
-	Customer           *Customer    `json:"customer,omitempty"`
-
-	Assistant *Assistant `json:"assistant,omitempty"`
 }

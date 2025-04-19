@@ -1,8 +1,17 @@
 package vapi
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/chriscow/minds"
 )
+
+// Alex: 0f7534fa-deee-4feb-a48f-6e6e64eb38e7
 
 // Assistant represents the top-level configuration for a voice interaction
 type Assistant struct {
@@ -57,9 +66,7 @@ type TranscriptionEndpointingPlan struct {
 
 // SpeakingPlan contains settings for speech timing
 type SpeakingPlan struct {
-	WaitSeconds              float64                      `json:"waitSeconds"`
-	SmartEndpointingEnabled  bool                         `json:"smartEndpointingEnabled"`
-	TranscriptionEndpointing TranscriptionEndpointingPlan `json:"transcriptionEndpointingPlan"`
+	WaitSeconds float64 `json:"waitSeconds"`
 }
 
 // SchemaProperty represents a property in the structured data schema
@@ -100,9 +107,9 @@ type SuccessEvaluationPlan struct {
 	// 		‘PercentageScale’: A scale of 0% to 100%.
 	// 		‘LikertScale’: A scale of Strongly Agree, Agree, Neutral, Disagree, Strongly Disagree.
 	// 		‘AutomaticRubric’: Automatically break down evaluation into several criteria, each with its own score.
-	// 		‘PassFail’: A simple ‘true’ if call passed, ‘false’ if not.
+	// 		‘PassFail’: A simple 'true' if call passed, 'false' if not.
 	//
-	// Default is ‘PassFail’.
+	// Default is 'PassFail'.
 	Rubric *string `json:"rubric,omitempty" enum:"NumericScale,DescriptiveScale,Checklist,Matrix,PercentageScale,LikertScale,AutomaticRubric,PassFail"`
 	// 	These are the messages used to generate the success evaluation.
 	//
@@ -180,16 +187,7 @@ func DefaultAssistant(agentName, prompt, firstMessage, webhook, voicemailMessage
 		EndCallPhrases:         []string{"goodbye"},
 		VoicemailDetection:     nil,
 		VoicemailMessage:       &voicemailMessage,
-		StartSpeakingPlan: &SpeakingPlan{
-			WaitSeconds:             0.4,
-			SmartEndpointingEnabled: true,
-			TranscriptionEndpointing: TranscriptionEndpointingPlan{
-				OnPunctuationSeconds:   0.1,
-				OnNoPunctuationSeconds: 1.5,
-				OnNumberSeconds:        0.5,
-			},
-		},
-		AnalysisPlan: nil,
+		AnalysisPlan:           nil,
 		// SilenceTimeoutSeconds:        30,
 		// MaxDurationSeconds:           180,
 		// BackgroundSound:              "off",
@@ -199,4 +197,60 @@ func DefaultAssistant(agentName, prompt, firstMessage, webhook, voicemailMessage
 	}
 
 	return req, nil
+}
+
+// GetAssistant retrieves an assistant by its ID and saves the raw JSON response to a file
+func GetAssistant(ctx context.Context, id string) (*Assistant, error) {
+	if os.Getenv("TESTING_MODE") == "true" {
+		var result Assistant
+		if err := loadTestData("get-assistant-response.json", &result); err != nil {
+			return nil, err
+		}
+		return &result, nil
+	}
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.vapi.ai/assistant/%s", id), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request for assistant: %w", err)
+	}
+
+	apiKey := os.Getenv("VAPI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("VAPI_API_KEY not set")
+	}
+
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to http client failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var body bytes.Buffer
+	_, err = body.ReadFrom(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get assistant. code: %d msg: %s", resp.StatusCode, body.String())
+	}
+
+	// Save the raw JSON response to a file for examination
+	filename := fmt.Sprintf("assistant-%s-response.json", id)
+	if err := os.WriteFile(filename, body.Bytes(), 0644); err != nil {
+		return nil, fmt.Errorf("failed to save response to file: %w", err)
+	}
+
+	var result Assistant
+	if err := json.Unmarshal(body.Bytes(), &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	return &result, nil
 }
