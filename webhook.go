@@ -93,8 +93,8 @@ Note: This might get stale during the call. To get the latest call object, espec
 "map[message:map[call:map[assistantId:<nil> assistantOverrides:map[variableValues:map[account-sid:c033b672-5b99-42ae-9ce2-b231e9a522fb application-sid:79d078c8-76b2-452a-99e0-ddd5abbf6269 cid:2270729304-3954070205-1530341129@msc1.382COM.COM forwarded-for:64.125.111.10 originating-carrier:382com voip-carrier-sid:a5569621-84ac-49cc-a8b8-11c7fb96b905]] createdAt:2025-04-19T16:50:05.656Z customer:map[number:+14258295443 sipUri:sip:+14258295443@44.229.228.186:5060] id:0ffa0790-6ad0-4b43-ba0f-7b665080f4dc orgId:4ab76b87-4964-48a6-8d82-1b32ec845652 phoneCallProvider:vapi phoneCallProviderDetails:map[sbcCallId:2270729304-3954070205-1530341129@msc1.382COM.COM] phoneCallProviderId:2e9501c3-9da0-446e-bf5a-bafe27e045fb phoneCallTransport:sip phoneNumberId:fdaffae3-edf4-4969-a273-690e04af6135 squadId:<nil> status:ringing type:inboundPhoneCall updatedAt:2025-04-19T16:50:05.656Z] customer:map[number:+14258295443 sipUri:sip:+14258295443@44.229.228.186:5060] phoneNumber:map[assistantId:<nil> authentication:<nil> createdAt:2025-04-19T16:39:11.998Z credentialId:<nil> credentialIds:<nil> fallbackDestination:<nil> fallbackForwardingPhoneNumber:<nil> hooks:<nil> id:fdaffae3-edf4-4969-a273-690e04af6135 name:Unlabeled number:+16592555076 numberE164CheckEnabled:<nil> orgId:4ab76b87-4964-48a6-8d82-1b32ec845652 provider:vapi providerResourceId:45719bef-ac51-496b-b8e2-1241bf29e128 server:<nil> serverUrl:<nil> serverUrlSecret:<nil> sipUri:<nil> squadId:<nil> status:active stripeSubscriptionCurrentPeriodStart:<nil> stripeSubscriptionId:<nil> stripeSubscriptionStatus:<nil> twilioAccountSid:<nil> twilioAuthToken:<nil> twilioOutgoingCallerId:<nil> updatedAt:2025-04-19T16:41:12.240Z useClusterSip:<nil>] timestamp:1.745081405664e+12 type:assistant-request]]"
 */
 
-type AssistantRequest struct {
-	Message struct {
+type AssistantRequestEnvelope struct {
+	AssistantRequest struct {
 		Type        string       `json:"type"`
 		PhoneNumber *PhoneNumber `json:"phoneNumber,omitempty"`
 		Timestamp   *float64     `json:"timestamp,omitempty"`
@@ -162,9 +162,9 @@ type AssistantRequestResponse struct {
 	AssistantOverrides *Assistant   `json:"assistantOverrides,omitempty"`
 }
 
-// EndOfCallReport represents the report generated at the end of a call
-type EndOfCallReport struct {
-	Message struct {
+// EndOfCallReportEnvelope represents the report generated at the end of a call
+type EndOfCallReportEnvelope struct {
+	Report struct {
 		ID        *string   `json:"id"`
 		Timestamp *float64  `json:"timestamp,omitempty"`
 		Type      string    `json:"type"`
