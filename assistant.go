@@ -15,6 +15,7 @@ import (
 
 // Assistant represents the top-level configuration for a voice interaction
 type Assistant struct {
+	ID                           *string                `json:"id,omitempty"`
 	Name                         *string                `json:"name,omitempty"`
 	Voice                        *ElevenLabsVoiceConfig `json:"voice,omitempty"`
 	Model                        *ModelConfig           `json:"model,omitempty"`

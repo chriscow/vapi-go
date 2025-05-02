@@ -164,7 +164,7 @@ type AssistantRequestResponse struct {
 
 // EndOfCallReportEnvelope represents the report generated at the end of a call
 type EndOfCallReportEnvelope struct {
-	Report struct {
+	EndOfCallReport struct {
 		ID        *string   `json:"id"`
 		Timestamp *float64  `json:"timestamp,omitempty"`
 		Type      string    `json:"type"`

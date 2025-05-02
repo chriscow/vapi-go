@@ -92,29 +92,29 @@ func TestEndOfCallReport_Unmarshal(t *testing.T) {
 	}
 
 	// Validate required fields are present
-	if report.Report.Type == "" {
+	if report.EndOfCallReport.Type == "" {
 		t.Error("Type is required but was empty")
 	}
-	if report.Report.EndedReason == "" {
+	if report.EndOfCallReport.EndedReason == "" {
 		t.Error("EndedReason is required but was empty")
 	}
-	if report.Report.Artifact.Messages == nil {
+	if report.EndOfCallReport.Artifact.Messages == nil {
 		t.Error("Artifact.Messages is required but was nil")
 	}
-	if report.Report.Analysis.Summary == nil {
+	if report.EndOfCallReport.Analysis.Summary == nil {
 		t.Error("Analysis.Summary is required but was empty")
 	}
 
-	summary := *report.Report.Analysis.Summary
+	summary := *report.EndOfCallReport.Analysis.Summary
 	if len(summary) > 40 {
 		summary = summary[:40] + "..."
 	}
 	// Log useful information for debugging
-	t.Logf("Report Type: %s", report.Report.Type)
-	t.Logf("Ended Reason: %s", report.Report.EndedReason)
-	t.Logf("Number of Messages: %d", len(report.Report.Artifact.Messages))
+	t.Logf("Report Type: %s", report.EndOfCallReport.Type)
+	t.Logf("Ended Reason: %s", report.EndOfCallReport.EndedReason)
+	t.Logf("Number of Messages: %d", len(report.EndOfCallReport.Artifact.Messages))
 	t.Logf("Analysis Summary: %s", summary)
-	if report.Report.Cost != nil {
-		t.Logf("Call Cost: $%.2f", *report.Report.Cost)
+	if report.EndOfCallReport.Cost != nil {
+		t.Logf("Call Cost: $%.2f", *report.EndOfCallReport.Cost)
 	}
 }
