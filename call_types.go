@@ -229,11 +229,16 @@ type TranscriptPlan struct {
 // Message represents a message in the call
 type Message struct {
 	Role             string  `json:"role"`
-	Message          string  `json:"message"`
+	Message          string  `json:"message,omitempty"`
 	Time             float64 `json:"time"`
 	EndTime          float64 `json:"endTime"`
 	SecondsFromStart float64 `json:"secondsFromStart"`
-	Duration         float64 `json:"duration"`
+	Duration         float64 `json:"duration,omitempty"`
+}
+
+type OpenAIMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content,omitempty"`
 }
 
 // Customer contains customer information

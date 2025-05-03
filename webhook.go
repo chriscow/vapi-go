@@ -1,6 +1,8 @@
 package vapi
 
-import "time"
+import (
+	"time"
+)
 
 // Message types
 const (
@@ -190,4 +192,17 @@ type EndOfCallReportEnvelope struct {
 
 		Assistant *Assistant `json:"assistant,omitempty"`
 	} `json:"message"`
+}
+
+type ConversationUpdateEnvelope struct {
+	ConversationUpdate ConversationUpdate `json:"message"`
+}
+
+type ConversationUpdate struct {
+	Type           string          `json:"type"`
+	OpenAIMessages []OpenAIMessage `json:"messagesOpenAIFormatted"`
+	Messages       []Message       `json:"messages,omitempty"`
+	PhoneNumber    *PhoneNumber    `json:"phoneNumber,omitempty"`
+	Customer       *Customer       `json:"customer,omitempty"`
+	Call           *Call           `json:"call,omitempty"`
 }
