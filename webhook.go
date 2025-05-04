@@ -162,6 +162,8 @@ type AssistantRequestResponse struct {
 	AssistantId        *string      `json:"assistantId,omitempty"`
 	Assistant          *Assistant   `json:"assistant,omitempty"`
 	AssistantOverrides *Assistant   `json:"assistantOverrides,omitempty"`
+	CustomerID         *string      `json:"customerId,omitempty"`
+	Customer           *Customer    `json:"customer,omitempty"`
 }
 
 // EndOfCallReportEnvelope represents the report generated at the end of a call
@@ -203,6 +205,7 @@ type ConversationUpdate struct {
 	OpenAIMessages []OpenAIMessage `json:"messagesOpenAIFormatted"`
 	Messages       []Message       `json:"messages,omitempty"`
 	PhoneNumber    *PhoneNumber    `json:"phoneNumber,omitempty"`
+	CustomerID     *string         `json:"customerId,omitempty"`
 	Customer       *Customer       `json:"customer,omitempty"`
 	Call           *Call           `json:"call,omitempty"`
 }

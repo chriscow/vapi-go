@@ -245,9 +245,9 @@ type OpenAIMessage struct {
 type Customer struct {
 	NumberE164CheckEnabled *bool  `json:"numberE164CheckEnabled,omitempty"`
 	Extension              string `json:"extension,omitempty"`
-	Number                 string `json:"number"`
+	Number                 string `json:"number,omitempty"`
 	SipURI                 string `json:"sipUri,omitempty"`
-	Name                   string `json:"name"`
+	Name                   string `json:"name,omitempty"`
 }
 
 // Call represents a call request
