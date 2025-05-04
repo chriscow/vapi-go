@@ -1,4 +1,5 @@
-package workflows
+// Package workflow provides types and logic for building conversational workflows.
+package workflow
 
 import (
 	"context"
@@ -8,15 +9,21 @@ import (
 	"time"
 )
 
-// SayNode represents a node that outputs a message to the user
+// SayNode represents a node that outputs a message to the user.
+// It can either output an exact message or generate a message from an LLM prompt.
 type SayNode struct {
 	BaseNode
-	Message     string `json:"message,omitempty"`
-	LLMPrompt   string `json:"llmPrompt,omitempty"`
+	// Message is the exact message to output if MessageType is "exact".
+	Message string `json:"message,omitempty"`
+	// LLMPrompt is the prompt to use for generating a message if MessageType is "generated".
+	LLMPrompt string `json:"llmPrompt,omitempty"`
+	// MessageType determines how the message is produced: "exact" or "generated".
 	MessageType string `json:"messageType,omitempty"` // "exact" or "generated"
 }
 
-// NewSayNode creates a new SayNode with an exact message
+// NewSayNode creates a new SayNode with an exact message.
+// id is the unique identifier for the node.
+// message is the message to output to the user.
 func NewSayNode(id string, message string) *SayNode {
 	now := time.Now()
 	return &SayNode{
@@ -31,7 +38,9 @@ func NewSayNode(id string, message string) *SayNode {
 	}
 }
 
-// NewSayNodeWithLLMPrompt creates a new SayNode with an LLM prompt
+// NewSayNodeWithLLMPrompt creates a new SayNode that generates its message from an LLM prompt.
+// id is the unique identifier for the node.
+// prompt is the prompt to use for message generation.
 func NewSayNodeWithLLMPrompt(id string, prompt string) *SayNode {
 	now := time.Now()
 	return &SayNode{
@@ -46,7 +55,9 @@ func NewSayNodeWithLLMPrompt(id string, prompt string) *SayNode {
 	}
 }
 
-// Execute runs the Say node's action
+// Execute runs the SayNode's action, outputting a message to the user or generating one from a prompt.
+// It updates the workflow state with the message and marks the node as completed.
+// If there is a next node, it updates the current node; otherwise, it marks the workflow as complete.
 func (n *SayNode) Execute(ctx context.Context, state *WorkflowState) error {
 	logger := slog.Default().With("node", n.NodeID, "type", n.NodeType)
 
@@ -97,7 +108,8 @@ func (n *SayNode) Execute(ctx context.Context, state *WorkflowState) error {
 	return nil
 }
 
-// ToMap converts the SayNode to a map for storage
+// ToMap converts the SayNode to a map[string]any for storage or serialization.
+// The returned map contains all relevant fields of the node.
 func (n *SayNode) ToMap() map[string]any {
 	return map[string]any{
 		"id":            n.NodeID,
@@ -111,7 +123,8 @@ func (n *SayNode) ToMap() map[string]any {
 	}
 }
 
-// FromMap initializes the SayNode from a map
+// FromMap initializes the SayNode from a map[string]any, typically loaded from storage.
+// It sets all relevant fields of the node from the map.
 func (n *SayNode) FromMap(data map[string]any) error {
 	if id, ok := data["id"].(string); ok {
 		n.NodeID = id

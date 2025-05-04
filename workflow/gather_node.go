@@ -1,4 +1,5 @@
-package workflows
+// Package workflow provides types and logic for building conversational workflows.
+package workflow
 
 import (
 	"context"
@@ -8,21 +9,23 @@ import (
 	"time"
 )
 
-// DataType represents the type of data to gather
+// DataType represents the type of data to gather from the user.
 type DataType string
 
 const (
-	// DataTypeString represents string data
+	// DataTypeString represents string data.
 	DataTypeString DataType = "string"
-	// DataTypeNumber represents number data
+	// DataTypeNumber represents number data.
 	DataTypeNumber DataType = "number"
-	// DataTypeBoolean represents boolean data
+	// DataTypeBoolean represents boolean data.
 	DataTypeBoolean DataType = "boolean"
-	// DataTypeEnum represents enum data
+	// DataTypeEnum represents enum data (a fixed set of string values).
 	DataTypeEnum DataType = "enum"
 )
 
-// GatherVariable represents a variable to gather from the user
+// GatherVariable represents a variable to gather from the user.
+// It describes the name, description, data type, and whether the variable is required.
+// For enum types, EnumValues specifies the allowed values.
 type GatherVariable struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
@@ -31,7 +34,8 @@ type GatherVariable struct {
 	EnumValues  []string `json:"enumValues,omitempty"` // Only for DataTypeEnum
 }
 
-// GatherNode represents a node that collects input from the user
+// GatherNode represents a node that collects input from the user.
+// It specifies which variables to gather, how many attempts to allow, and the prompt to use for LLM extraction.
 type GatherNode struct {
 	BaseNode
 	Variables      []GatherVariable `json:"variables"`
@@ -42,7 +46,11 @@ type GatherNode struct {
 	ExtractedData  map[string]any   `json:"extractedData,omitempty"`
 }
 
-// NewGatherNode creates a new GatherNode
+// NewGatherNode creates a new GatherNode.
+// id is the unique identifier for the node.
+// variables is the list of variables to gather from the user.
+// maxAttempts is the maximum number of attempts to gather input.
+// llmPrompt is the prompt to use for LLM-based extraction.
 func NewGatherNode(id string, variables []GatherVariable, maxAttempts int, llmPrompt string) *GatherNode {
 	now := time.Now()
 	return &GatherNode{
@@ -58,7 +66,9 @@ func NewGatherNode(id string, variables []GatherVariable, maxAttempts int, llmPr
 	}
 }
 
-// Execute runs the Gather node's action
+// Execute runs the GatherNode's action, collecting input from the user or simulating extraction for MVP.
+// It updates the workflow state with the extracted data and marks the node as completed.
+// If there is a next node, it updates the current node; otherwise, it marks the workflow as complete.
 func (n *GatherNode) Execute(ctx context.Context, state *WorkflowState) error {
 	logger := slog.Default().With("node", n.NodeID, "type", n.NodeType)
 
@@ -147,7 +157,8 @@ func (n *GatherNode) Execute(ctx context.Context, state *WorkflowState) error {
 	return nil
 }
 
-// ToMap converts the GatherNode to a map for storage
+// ToMap converts the GatherNode to a map[string]any for storage or serialization.
+// The returned map contains all relevant fields of the node, including variables and extracted data.
 func (n *GatherNode) ToMap() map[string]any {
 	variablesMaps := make([]map[string]any, len(n.Variables))
 	for i, v := range n.Variables {
@@ -175,7 +186,8 @@ func (n *GatherNode) ToMap() map[string]any {
 	}
 }
 
-// FromMap initializes the GatherNode from a map
+// FromMap initializes the GatherNode from a map[string]any, typically loaded from storage.
+// It sets all relevant fields of the node from the map, including variables and extracted data.
 func (n *GatherNode) FromMap(data map[string]any) error {
 	if id, ok := data["id"].(string); ok {
 		n.NodeID = id

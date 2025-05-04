@@ -1,4 +1,5 @@
-package workflows
+// Package workflow provides types and logic for building conversational workflows and VAPI integration.
+package workflow
 
 import (
 	"bytes"
@@ -12,7 +13,13 @@ import (
 	"github.com/chriscow/vapi-go"
 )
 
-// ProcessVAPIUpdate processes a VAPI conversation update and advances the workflow if needed
+// ProcessVAPIUpdate processes a VAPI conversation update and advances the workflow if needed.
+//
+// It takes the context, workflow engine, workflow ID, user ID, call ID, a slice of VAPI messages,
+// the VAPI control URL, and a logger. It converts VAPI messages to a format the workflow engine can process,
+// advances the workflow, and if the current node is a Say node, sends its message to the user via VAPI.
+//
+// Returns an error if processing or message sending fails.
 func ProcessVAPIUpdate(
 	ctx context.Context,
 	engine *WorkflowEngine,
@@ -70,7 +77,11 @@ func ProcessVAPIUpdate(
 	return nil
 }
 
-// sendVAPIMessage sends a message to the user via the VAPI control API
+// sendVAPIMessage sends a message to the user via the VAPI control API.
+//
+// It takes the context, VAPI control URL, message to send, and a logger.
+// It constructs the appropriate control message, sends it as a POST request to the control URL,
+// and logs the result. Returns an error if the request fails or the response is not HTTP 200 OK.
 func sendVAPIMessage(ctx context.Context, controlURL string, message string, logger *slog.Logger) error {
 	// Prepare the control message
 	controlMsg := map[string]any{
