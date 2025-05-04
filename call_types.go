@@ -3,6 +3,8 @@ package vapi
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 // ServerConfig defines the configuration for a server endpoint
@@ -153,14 +155,14 @@ type Monitor struct {
 
 // Artifact represents call artifacts like recordings and transcripts
 type Artifact struct {
-	Messages                        []Message `json:"messages"`
-	MessagesOpenAIFormatted         []Message `json:"messagesOpenAIFormatted"`
-	RecordingUrl                    string    `json:"recordingUrl"`
-	StereoRecordingUrl              string    `json:"stereoRecordingUrl"`
-	VideoRecordingUrl               string    `json:"videoRecordingUrl"`
-	VideoRecordingStartDelaySeconds int       `json:"videoRecordingStartDelaySeconds"`
-	Transcript                      string    `json:"transcript"`
-	PcapUrl                         string    `json:"pcapUrl"`
+	Messages                        []Message                      `json:"messages"`
+	MessagesOpenAIFormatted         []openai.ChatCompletionMessage `json:"messagesOpenAIFormatted"`
+	RecordingUrl                    string                         `json:"recordingUrl"`
+	StereoRecordingUrl              string                         `json:"stereoRecordingUrl"`
+	VideoRecordingUrl               string                         `json:"videoRecordingUrl"`
+	VideoRecordingStartDelaySeconds int                            `json:"videoRecordingStartDelaySeconds"`
+	Transcript                      string                         `json:"transcript"`
+	PcapUrl                         string                         `json:"pcapUrl"`
 }
 
 // Transport represents transport configuration for a call
@@ -245,9 +247,9 @@ type OpenAIMessage struct {
 type Customer struct {
 	NumberE164CheckEnabled *bool  `json:"numberE164CheckEnabled,omitempty"`
 	Extension              string `json:"extension,omitempty"`
-	Number                 string `json:"number"`
+	Number                 string `json:"number,omitempty"`
 	SipURI                 string `json:"sipUri,omitempty"`
-	Name                   string `json:"name"`
+	Name                   string `json:"name,omitempty"`
 }
 
 // Call represents a call request
