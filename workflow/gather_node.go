@@ -7,51 +7,41 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/chriscow/minds"
 )
 
-// DataType represents the type of data to gather from the user.
+// DataType constants for variable types
 type DataType string
 
 const (
-	// DataTypeString represents string data.
-	DataTypeString DataType = "string"
-	// DataTypeNumber represents number data.
-	DataTypeNumber DataType = "number"
-	// DataTypeBoolean represents boolean data.
+	DataTypeString  DataType = "string"
+	DataTypeNumber  DataType = "number"
+	DataTypeInteger DataType = "integer"
 	DataTypeBoolean DataType = "boolean"
-	// DataTypeEnum represents enum data (a fixed set of string values).
-	DataTypeEnum DataType = "enum"
+	DataTypeObject  DataType = "object"
+	DataTypeArray   DataType = "array"
+	DataTypeEnum    DataType = "enum"
 )
-
-// GatherVariable represents a variable to gather from the user.
-// It describes the name, description, data type, and whether the variable is required.
-// For enum types, EnumValues specifies the allowed values.
-type GatherVariable struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	DataType    DataType `json:"dataType"`
-	Required    bool     `json:"required"`
-	EnumValues  []string `json:"enumValues,omitempty"` // Only for DataTypeEnum
-}
 
 // GatherNode represents a node that collects input from the user.
 // It specifies which variables to gather, how many attempts to allow, and the prompt to use for LLM extraction.
 type GatherNode struct {
 	BaseNode
-	Variables      []GatherVariable `json:"variables"`
-	MaxAttempts    int              `json:"maxAttempts"`
-	LLMPrompt      string           `json:"llmPrompt"`
-	FallbackNodeID string           `json:"fallbackNodeId,omitempty"`
-	FollowUpPrompt string           `json:"followUpPrompt,omitempty"`
-	ExtractedData  map[string]any   `json:"extractedData,omitempty"`
+	GatherSchema   *minds.Definition
+	MaxAttempts    int
+	LLMPrompt      string
+	FallbackNodeID string
+	FollowUpPrompt string
+	ExtractedData  map[string]any // JSON data extracted from conversation
 }
 
 // NewGatherNode creates a new GatherNode.
 // id is the unique identifier for the node.
-// variables is the list of variables to gather from the user.
+// schema is the list of variables to gather from the user.
 // maxAttempts is the maximum number of attempts to gather input.
 // llmPrompt is the prompt to use for LLM-based extraction.
-func NewGatherNode(id string, variables []GatherVariable, maxAttempts int, llmPrompt string) *GatherNode {
+func NewGatherNode(id string, schema *minds.Definition, maxAttempts int, llmPrompt string) *GatherNode {
 	now := time.Now()
 	return &GatherNode{
 		BaseNode: BaseNode{
@@ -60,9 +50,10 @@ func NewGatherNode(id string, variables []GatherVariable, maxAttempts int, llmPr
 			CreatedAt:     now,
 			LastUpdatedAt: now,
 		},
-		Variables:   variables,
-		MaxAttempts: maxAttempts,
-		LLMPrompt:   llmPrompt,
+		GatherSchema:  schema,
+		MaxAttempts:   maxAttempts,
+		LLMPrompt:     llmPrompt,
+		ExtractedData: make(map[string]any),
 	}
 }
 
@@ -75,30 +66,45 @@ func (n *GatherNode) Execute(ctx context.Context, state *WorkflowState) error {
 	// For MVP, we'll use a simple approach to gather data
 	// In a real implementation, we would use an LLM API here
 
-	// Check if we need to extract data from the conversation
-	missing := make([]GatherVariable, 0)
+	// Find missing properties from the schema
+	missing := make([]string, 0)
 
 	// Initialize the extracted data map if not already present
 	if n.ExtractedData == nil {
 		n.ExtractedData = make(map[string]any)
 	}
 
-	// Check which variables are missing
-	for _, variable := range n.Variables {
-		if _, ok := n.ExtractedData[variable.Name]; !ok {
-			// In a real implementation, we would check if the variable is in state.Variables
-			// from previous messages. For MVP, we'll just mark it as missing.
-			missing = append(missing, variable)
+	// Check which properties from the schema are missing
+	if n.GatherSchema.Type == minds.Object && n.GatherSchema.Properties != nil {
+		for propName, _ := range n.GatherSchema.Properties {
+			// Check if the property is required and missing
+			isRequired := false
+			for _, req := range n.GatherSchema.Required {
+				if req == propName {
+					isRequired = true
+					break
+				}
+			}
+
+			if isRequired {
+				if _, ok := n.ExtractedData[propName]; !ok {
+					// In a real implementation, we would check if the variable is in state.Variables
+					// from previous messages. For MVP, we'll just mark it as missing.
+					missing = append(missing, propName)
+				}
+			}
 		}
 	}
 
-	// If there are missing variables, generate a prompt to extract them
+	// If there are missing properties, generate a prompt to extract them
 	if len(missing) > 0 {
 		// Generate prompt for the LLM to extract missing data
 		prompt := n.LLMPrompt + "\n\nPlease extract the following information:\n"
-		for _, v := range missing {
-			prompt += fmt.Sprintf("- %s: %s (Type: %s, Required: %t)\n",
-				v.Name, v.Description, v.DataType, v.Required)
+
+		for _, propName := range missing {
+			propDef := n.GatherSchema.Properties[propName]
+			prompt += fmt.Sprintf("- %s: %s (Type: %s, Required: true)\n",
+				propName, propDef.Description, propDef.Type)
 		}
 
 		// For MVP, we'll simulate data extraction
@@ -107,25 +113,25 @@ func (n *GatherNode) Execute(ctx context.Context, state *WorkflowState) error {
 
 		// For now, just add some dummy data
 		// In a real implementation, this would come from the LLM's response
-		for _, variable := range missing {
-			switch variable.DataType {
-			case DataTypeString:
-				n.ExtractedData[variable.Name] = fmt.Sprintf("Sample %s", variable.Name)
-			case DataTypeNumber:
-				n.ExtractedData[variable.Name] = 42
-			case DataTypeBoolean:
-				n.ExtractedData[variable.Name] = true
-			case DataTypeEnum:
-				if len(variable.EnumValues) > 0 {
-					n.ExtractedData[variable.Name] = variable.EnumValues[0]
+		for _, propName := range missing {
+			propDef := n.GatherSchema.Properties[propName]
+
+			switch propDef.Type {
+			case minds.String:
+				n.ExtractedData[propName] = fmt.Sprintf("Sample %s", propName)
+			case minds.Number, minds.Integer:
+				n.ExtractedData[propName] = 42
+			case minds.Boolean:
+				n.ExtractedData[propName] = true
+			default:
+				// Handle any other types
+				if len(propDef.Enum) > 0 {
+					n.ExtractedData[propName] = propDef.Enum[0]
 				} else {
-					n.ExtractedData[variable.Name] = "unknown"
+					n.ExtractedData[propName] = "unknown"
 				}
 			}
 		}
-
-		// In a real implementation, some variables might still be missing after extraction
-		// For MVP, we'll assume all variables were extracted successfully
 
 		// Add the extracted data to state.Variables
 		if state.Variables == nil {
@@ -158,24 +164,15 @@ func (n *GatherNode) Execute(ctx context.Context, state *WorkflowState) error {
 }
 
 // ToMap converts the GatherNode to a map[string]any for storage or serialization.
-// The returned map contains all relevant fields of the node, including variables and extracted data.
+// The returned map contains all relevant fields of the node, including schema and extracted data.
 func (n *GatherNode) ToMap() map[string]any {
-	variablesMaps := make([]map[string]any, len(n.Variables))
-	for i, v := range n.Variables {
-		variablesMaps[i] = map[string]any{
-			"name":        v.Name,
-			"description": v.Description,
-			"dataType":    string(v.DataType),
-			"required":    v.Required,
-			"enumValues":  v.EnumValues,
-		}
-	}
+	schemaJSON, _ := json.Marshal(n.GatherSchema)
 
 	return map[string]any{
 		"id":             n.NodeID,
 		"type":           string(n.NodeType),
 		"nextNodeId":     n.NextNodeID,
-		"variables":      variablesMaps,
+		"gatherSchema":   json.RawMessage(schemaJSON),
 		"maxAttempts":    n.MaxAttempts,
 		"llmPrompt":      n.LLMPrompt,
 		"fallbackNodeId": n.FallbackNodeID,
@@ -187,7 +184,7 @@ func (n *GatherNode) ToMap() map[string]any {
 }
 
 // FromMap initializes the GatherNode from a map[string]any, typically loaded from storage.
-// It sets all relevant fields of the node from the map, including variables and extracted data.
+// It sets all relevant fields of the node from the map, including schema and extracted data.
 func (n *GatherNode) FromMap(data map[string]any) error {
 	if id, ok := data["id"].(string); ok {
 		n.NodeID = id
@@ -201,32 +198,10 @@ func (n *GatherNode) FromMap(data map[string]any) error {
 		n.NextNodeID = nextNodeID
 	}
 
-	if variablesData, ok := data["variables"].([]map[string]any); ok {
-		n.Variables = make([]GatherVariable, len(variablesData))
-		for i, varData := range variablesData {
-			var variable GatherVariable
-
-			if name, ok := varData["name"].(string); ok {
-				variable.Name = name
-			}
-
-			if desc, ok := varData["description"].(string); ok {
-				variable.Description = desc
-			}
-
-			if dataType, ok := varData["dataType"].(string); ok {
-				variable.DataType = DataType(dataType)
-			}
-
-			if required, ok := varData["required"].(bool); ok {
-				variable.Required = required
-			}
-
-			if enumValues, ok := varData["enumValues"].([]string); ok {
-				variable.EnumValues = enumValues
-			}
-
-			n.Variables[i] = variable
+	if schemaData, ok := data["gatherSchema"].(json.RawMessage); ok {
+		var schema minds.Definition
+		if err := json.Unmarshal(schemaData, &schema); err == nil {
+			n.GatherSchema = &schema
 		}
 	}
 

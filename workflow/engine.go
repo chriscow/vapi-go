@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/chriscow/minds"
 )
 
 // WorkflowEngine manages the execution, state, and transitions of a workflow.
@@ -230,22 +232,42 @@ func (e *WorkflowEngine) GetCurrentNodeMessage(ctx context.Context, workflowID, 
 			return fmt.Sprintf("Generated message based on: %s", node.LLMPrompt), nil
 		}
 	case *GatherNode:
-		// For Gather nodes, check if we need to prompt for specific variables
-		missing := make([]GatherVariable, 0)
+		// For Gather nodes, check if we need to prompt for specific properties in the schema
+		missing := make([]string, 0)
 
-		for _, variable := range node.Variables {
-			if _, ok := state.Variables[variable.Name]; !ok {
-				missing = append(missing, variable)
+		// Check which properties from the schema are missing
+		if node.GatherSchema != nil && node.GatherSchema.Type == minds.Object && node.GatherSchema.Properties != nil {
+			for propName := range node.GatherSchema.Properties {
+				// Check if the property is required and missing
+				isRequired := false
+				for _, req := range node.GatherSchema.Required {
+					if req == propName {
+						isRequired = true
+						break
+					}
+				}
+
+				if isRequired {
+					if _, ok := state.Variables[propName]; !ok {
+						missing = append(missing, propName)
+					}
+				}
 			}
 		}
 
 		if len(missing) > 0 {
-			// Generate a prompt for the missing variables
+			// Generate a prompt for the missing properties
 			prompt := "I need to gather some information from you:\n"
-			for _, v := range missing {
-				prompt += fmt.Sprintf("- %s: %s\n", v.Name, v.Description)
+			for _, propName := range missing {
+				propDef := node.GatherSchema.Properties[propName]
+				prompt += fmt.Sprintf("- %s: %s\n", propName, propDef.Description)
 			}
 			return prompt, nil
+		}
+
+		// If we have a followup prompt and have gathered all required data
+		if node.FollowUpPrompt != "" {
+			return node.FollowUpPrompt, nil
 		}
 
 		return "Thank you for providing that information.", nil
