@@ -2,7 +2,7 @@ module github.com/chriscow/vapi-go
 
 go 1.18
 
-replace github.com/chriscow/minds => ../thoughtnet/minds
+// replace github.com/chriscow/minds => ../thoughtnet/minds
 
 require (
 	github.com/chriscow/minds v0.0.7
