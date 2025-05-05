@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/chriscow/minds"
+	"github.com/chriscow/vapi-go"
 )
 
 // WorkflowEngine manages the execution, state, and transitions of a workflow.
@@ -103,7 +104,7 @@ func (e *WorkflowEngine) StartWorkflow(ctx context.Context, workflowID, userID, 
 // ProcessConversationUpdate processes a new conversation update for a workflow execution.
 // It loads the workflow and state, executes the current node, advances the workflow as needed,
 // and persists the updated state. Returns the updated workflow state or an error.
-func (e *WorkflowEngine) ProcessConversationUpdate(ctx context.Context, workflowID, userID, callID string, messages []map[string]any) (*WorkflowState, error) {
+func (e *WorkflowEngine) ProcessConversationUpdate(ctx context.Context, workflowID, userID, callID string, messages []vapi.Message) (*WorkflowState, error) {
 	logger := e.logger.With(
 		"workflowID", workflowID,
 		"userID", userID,
@@ -142,7 +143,7 @@ func (e *WorkflowEngine) ProcessConversationUpdate(ctx context.Context, workflow
 	logger.Info("processing message for node", "nodeID", currentNode.ID(), "nodeType", currentNode.Type())
 
 	// Execute the node
-	if err := currentNode.Execute(ctx, state); err != nil {
+	if err := currentNode.Execute(ctx, state, messages); err != nil {
 		logger.Error("node execution failed", "nodeID", currentNode.ID(), "error", err)
 		return nil, fmt.Errorf("node execution failed: %w", err)
 	}
@@ -167,7 +168,7 @@ func (e *WorkflowEngine) ProcessConversationUpdate(ctx context.Context, workflow
 			logger.Info("executing next node automatically", "nodeID", nextNode.ID(), "nodeType", nextNode.Type())
 
 			// Execute the node
-			if err := nextNode.Execute(ctx, state); err != nil {
+			if err := nextNode.Execute(ctx, state, messages); err != nil {
 				logger.Error("node execution failed", "nodeID", nextNode.ID(), "error", err)
 				return nil, fmt.Errorf("node execution failed: %w", err)
 			}

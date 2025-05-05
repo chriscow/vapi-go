@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/chriscow/minds"
+	"github.com/chriscow/vapi-go"
 )
 
 func TestGatherNode_Execute(t *testing.T) {
@@ -46,7 +47,8 @@ func TestGatherNode_Execute(t *testing.T) {
 	}
 
 	// Execute the node with the state
-	err := node.Execute(context.Background(), state)
+	messages := []vapi.Message{}
+	err := node.Execute(context.Background(), state, messages)
 	if err != nil {
 		t.Fatalf("Error executing GatherNode: %v", err)
 	}
@@ -62,26 +64,5 @@ func TestGatherNode_Execute(t *testing.T) {
 	// Verify that the node was marked as completed
 	if len(state.CompletedNodeIDs) != 1 || state.CompletedNodeIDs[0] != node.NodeID {
 		t.Errorf("Node not properly marked as completed")
-	}
-
-	// Test ToMap and FromMap
-	nodeMap := node.ToMap()
-
-	// Create a new node and load from map
-	newNode := &GatherNode{}
-	err = newNode.FromMap(nodeMap)
-	if err != nil {
-		t.Fatalf("Error loading node from map: %v", err)
-	}
-
-	// Verify that the new node has the same properties
-	if newNode.NodeID != node.NodeID {
-		t.Errorf("Expected NodeID to be %s, got %s", node.NodeID, newNode.NodeID)
-	}
-	if newNode.MaxAttempts != node.MaxAttempts {
-		t.Errorf("Expected MaxAttempts to be %d, got %d", node.MaxAttempts, newNode.MaxAttempts)
-	}
-	if newNode.LLMPrompt != node.LLMPrompt {
-		t.Errorf("Expected LLMPrompt to be %s, got %s", node.LLMPrompt, newNode.LLMPrompt)
 	}
 }

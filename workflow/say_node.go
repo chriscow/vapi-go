@@ -3,10 +3,20 @@ package workflow
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/chriscow/vapi-go"
+)
+
+type MessageType string
+
+const (
+	// MessageTypeExact indicates the message is an exact string.
+	MessageTypeExact MessageType = "exact"
+	// MessageTypeGenerated indicates the message is generated from a prompt.
+	MessageTypeGenerated MessageType = "generated"
 )
 
 // SayNode represents a node that outputs a message to the user.
@@ -14,11 +24,11 @@ import (
 type SayNode struct {
 	BaseNode
 	// Message is the exact message to output if MessageType is "exact".
-	Message string `json:"message,omitempty"`
+	Message string
 	// LLMPrompt is the prompt to use for generating a message if MessageType is "generated".
-	LLMPrompt string `json:"llmPrompt,omitempty"`
+	LLMPrompt string
 	// MessageType determines how the message is produced: "exact" or "generated".
-	MessageType string `json:"messageType,omitempty"` // "exact" or "generated"
+	MessageType MessageType
 }
 
 // NewSayNode creates a new SayNode with an exact message.
@@ -34,14 +44,14 @@ func NewSayNode(id string, message string) *SayNode {
 			LastUpdatedAt: now,
 		},
 		Message:     message,
-		MessageType: "exact",
+		MessageType: MessageTypeExact,
 	}
 }
 
 // NewSayNodeWithLLMPrompt creates a new SayNode that generates its message from an LLM prompt.
 // id is the unique identifier for the node.
 // prompt is the prompt to use for message generation.
-func NewSayNodeWithLLMPrompt(id string, prompt string) *SayNode {
+func NewGeneratedSayNode(id string, prompt string) *SayNode {
 	now := time.Now()
 	return &SayNode{
 		BaseNode: BaseNode{
@@ -51,46 +61,30 @@ func NewSayNodeWithLLMPrompt(id string, prompt string) *SayNode {
 			LastUpdatedAt: now,
 		},
 		LLMPrompt:   prompt,
-		MessageType: "generated",
+		MessageType: MessageTypeGenerated,
 	}
 }
 
 // Execute runs the SayNode's action, outputting a message to the user or generating one from a prompt.
 // It updates the workflow state with the message and marks the node as completed.
 // If there is a next node, it updates the current node; otherwise, it marks the workflow as complete.
-func (n *SayNode) Execute(ctx context.Context, state *WorkflowState) error {
+func (n *SayNode) Execute(ctx context.Context, state *WorkflowState, messages []vapi.Message) error {
 	logger := slog.Default().With("node", n.NodeID, "type", n.NodeType)
 
 	message := ""
-	if n.MessageType == "exact" {
+	if n.MessageType == MessageTypeExact {
 		message = n.Message
-	} else if n.MessageType == "generated" {
-		// For MVP, we'll use a simple approach to generate a message
-		// In a real implementation, we would use an LLM API here
-
-		// Replace variables in the prompt
-		prompt := n.LLMPrompt
-		for key, value := range state.Variables {
-			valueStr, _ := json.Marshal(value)
-			prompt = fmt.Sprintf("%s\n%s: %s", prompt, key, string(valueStr))
-		}
-
-		// For now, just use the prompt as the message
-		// In a real implementation, we would call the LLM here
-		message = fmt.Sprintf("Generated message based on: %s", prompt)
-
-		logger.Info("generated message from LLM prompt")
+	} else if n.MessageType == MessageTypeGenerated {
+		// Simulate LLM message generation
+		// In a real implementation, we would call an LLM API here
+		message = fmt.Sprintf("Generated message from prompt: %s", n.LLMPrompt)
+	} else {
+		return fmt.Errorf("invalid message type: %s", n.MessageType)
 	}
 
 	// In a real implementation, we would send this message to the user
 	// For now, just log it
 	logger.Info("executing say node", "message", message)
-
-	// Add the message to state variables
-	if state.Variables == nil {
-		state.Variables = make(map[string]any)
-	}
-	state.Variables["lastSayMessage"] = message
 
 	// Mark this node as completed
 	state.CompletedNodeIDs = append(state.CompletedNodeIDs, n.NodeID)
@@ -108,55 +102,55 @@ func (n *SayNode) Execute(ctx context.Context, state *WorkflowState) error {
 	return nil
 }
 
-// ToMap converts the SayNode to a map[string]any for storage or serialization.
-// The returned map contains all relevant fields of the node.
-func (n *SayNode) ToMap() map[string]any {
-	return map[string]any{
-		"id":            n.NodeID,
-		"type":          string(n.NodeType),
-		"nextNodeId":    n.NextNodeID,
-		"message":       n.Message,
-		"llmPrompt":     n.LLMPrompt,
-		"messageType":   n.MessageType,
-		"createdAt":     n.CreatedAt,
-		"lastUpdatedAt": n.LastUpdatedAt,
-	}
-}
+// // ToMap converts the SayNode to a map[string]any for storage or serialization.
+// // The returned map contains all relevant fields of the node.
+// func (n *SayNode) ToMap() map[string]any {
+// 	return map[string]any{
+// 		"id":            n.NodeID,
+// 		"type":          string(n.NodeType),
+// 		"nextNodeId":    n.NextNodeID,
+// 		"message":       n.Message,
+// 		"llmPrompt":     n.LLMPrompt,
+// 		"messageType":   n.MessageType,
+// 		"createdAt":     n.CreatedAt,
+// 		"lastUpdatedAt": n.LastUpdatedAt,
+// 	}
+// }
 
-// FromMap initializes the SayNode from a map[string]any, typically loaded from storage.
-// It sets all relevant fields of the node from the map.
-func (n *SayNode) FromMap(data map[string]any) error {
-	if id, ok := data["id"].(string); ok {
-		n.NodeID = id
-	}
+// // FromMap initializes the SayNode from a map[string]any, typically loaded from storage.
+// // It sets all relevant fields of the node from the map.
+// func (n *SayNode) FromMap(data map[string]any) error {
+// 	if id, ok := data["id"].(string); ok {
+// 		n.NodeID = id
+// 	}
 
-	if typeStr, ok := data["type"].(string); ok {
-		n.NodeType = NodeType(typeStr)
-	}
+// 	if typeStr, ok := data["type"].(string); ok {
+// 		n.NodeType = NodeType(typeStr)
+// 	}
 
-	if nextNodeID, ok := data["nextNodeId"].(string); ok {
-		n.NextNodeID = nextNodeID
-	}
+// 	if nextNodeID, ok := data["nextNodeId"].(string); ok {
+// 		n.NextNodeID = nextNodeID
+// 	}
 
-	if message, ok := data["message"].(string); ok {
-		n.Message = message
-	}
+// 	if message, ok := data["message"].(string); ok {
+// 		n.Message = message
+// 	}
 
-	if llmPrompt, ok := data["llmPrompt"].(string); ok {
-		n.LLMPrompt = llmPrompt
-	}
+// 	if llmPrompt, ok := data["llmPrompt"].(string); ok {
+// 		n.LLMPrompt = llmPrompt
+// 	}
 
-	if messageType, ok := data["messageType"].(string); ok {
-		n.MessageType = messageType
-	}
+// 	if messageType, ok := data["messageType"].(string); ok {
+// 		n.MessageType = messageType
+// 	}
 
-	if createdAt, ok := data["createdAt"].(time.Time); ok {
-		n.CreatedAt = createdAt
-	}
+// 	if createdAt, ok := data["createdAt"].(time.Time); ok {
+// 		n.CreatedAt = createdAt
+// 	}
 
-	if lastUpdatedAt, ok := data["lastUpdatedAt"].(time.Time); ok {
-		n.LastUpdatedAt = lastUpdatedAt
-	}
+// 	if lastUpdatedAt, ok := data["lastUpdatedAt"].(time.Time); ok {
+// 		n.LastUpdatedAt = lastUpdatedAt
+// 	}
 
-	return nil
-}
+// 	return nil
+// }

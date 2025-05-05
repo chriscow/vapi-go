@@ -41,17 +41,17 @@ func ProcessVAPIUpdate(
 	)
 
 	// Convert VAPI messages to a format the workflow engine can process
-	processedMessages := make([]map[string]any, len(messages))
-	for i, msg := range messages {
-		processedMessages[i] = map[string]any{
-			"content":          msg.Message,
-			"role":             msg.Role,
-			"secondsFromStart": msg.SecondsFromStart,
-		}
-	}
+	// processedMessages := make([]map[string]any, len(messages))
+	// for i, msg := range messages {
+	// 	processedMessages[i] = map[string]any{
+	// 		"content":          msg.Message,
+	// 		"role":             msg.Role,
+	// 		"secondsFromStart": msg.SecondsFromStart,
+	// 	}
+	// }
 
 	// Process the message and advance the workflow
-	_, err := engine.ProcessConversationUpdate(ctx, workflowID, userID, callID, processedMessages)
+	_, err := engine.ProcessConversationUpdate(ctx, workflowID, userID, callID, messages)
 	if err != nil {
 		return fmt.Errorf("failed to process conversation update: %w", err)
 	}

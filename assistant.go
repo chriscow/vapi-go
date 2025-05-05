@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/chriscow/minds"
 )
 
 // Alex: 0f7534fa-deee-4feb-a48f-6e6e64eb38e7
@@ -86,10 +88,10 @@ type SummaryPlan struct {
 }
 
 type StructuredDataPlan struct {
-	Messages       []Message   `json:"messages"`
-	Enabled        bool        `json:"enabled"` // defaults to false
-	Schema         *Definition `json:"schema,omitempty"`
-	TimeoutSeconds *int        `json:"timeoutSeconds,omitempty"` // defaults to 5 seconds
+	Messages       []Message         `json:"messages"`
+	Enabled        bool              `json:"enabled"` // defaults to false
+	Schema         *minds.Definition `json:"schema,omitempty"`
+	TimeoutSeconds *int              `json:"timeoutSeconds,omitempty"` // defaults to 5 seconds
 }
 
 type StructuredDataMulti struct {

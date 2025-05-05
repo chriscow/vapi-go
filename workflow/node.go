@@ -3,6 +3,8 @@ package workflow
 import (
 	"context"
 	"time"
+
+	"github.com/chriscow/vapi-go"
 )
 
 // NodeType represents the type of workflow node
@@ -24,13 +26,13 @@ type Node interface {
 	Type() NodeType
 
 	// Execute runs the node's action
-	Execute(ctx context.Context, state *WorkflowState) error
+	Execute(ctx context.Context, state *WorkflowState, messages []vapi.Message) error
 
 	// ToMap converts the node to a map for storage
-	ToMap() map[string]any
+	// ToMap() map[string]any
 
 	// FromMap initializes the node from a map
-	FromMap(data map[string]any) error
+	// FromMap(data map[string]any) error
 }
 
 // BaseNode contains common fields for all node types
