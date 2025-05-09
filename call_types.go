@@ -3,6 +3,8 @@ package vapi
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 // ServerConfig defines the configuration for a server endpoint
@@ -153,14 +155,14 @@ type Monitor struct {
 
 // Artifact represents call artifacts like recordings and transcripts
 type Artifact struct {
-	Messages                        []Message `json:"messages"`
-	MessagesOpenAIFormatted         []Message `json:"messagesOpenAIFormatted"`
-	RecordingUrl                    string    `json:"recordingUrl"`
-	StereoRecordingUrl              string    `json:"stereoRecordingUrl"`
-	VideoRecordingUrl               string    `json:"videoRecordingUrl"`
-	VideoRecordingStartDelaySeconds int       `json:"videoRecordingStartDelaySeconds"`
-	Transcript                      string    `json:"transcript"`
-	PcapUrl                         string    `json:"pcapUrl"`
+	Messages                        []Message                      `json:"messages"`
+	MessagesOpenAIFormatted         []openai.ChatCompletionMessage `json:"messagesOpenAIFormatted"`
+	RecordingUrl                    string                         `json:"recordingUrl"`
+	StereoRecordingUrl              string                         `json:"stereoRecordingUrl"`
+	VideoRecordingUrl               string                         `json:"videoRecordingUrl"`
+	VideoRecordingStartDelaySeconds int                            `json:"videoRecordingStartDelaySeconds"`
+	Transcript                      string                         `json:"transcript"`
+	PcapUrl                         string                         `json:"pcapUrl"`
 }
 
 // Transport represents transport configuration for a call
