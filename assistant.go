@@ -202,14 +202,6 @@ func DefaultAssistant(agentName, prompt, firstMessage, webhook, voicemailMessage
 
 // GetAssistant retrieves an assistant by its ID and saves the raw JSON response to a file
 func GetAssistant(ctx context.Context, id string) (*Assistant, error) {
-	if os.Getenv("TESTING_MODE") == "true" {
-		var result Assistant
-		if err := loadTestData("get-assistant-response.json", &result); err != nil {
-			return nil, err
-		}
-		return &result, nil
-	}
-
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}

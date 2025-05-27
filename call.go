@@ -7,17 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 )
-
-// loadTestData loads test data from a JSON file
-func loadTestData(filename string, v any) error {
-	data, err := os.ReadFile(filepath.Join("testdata", "vapi", filename))
-	if err != nil {
-		return fmt.Errorf("failed to read test data: %w", err)
-	}
-	return json.Unmarshal(data, v)
-}
 
 const (
 	VoiceMailDetectionProviderTwilio = "twilio"
@@ -25,14 +15,6 @@ const (
 
 // CreateCall creates a new call with the given configuration
 func CreateCall(ctx context.Context, call Call) (*Call, error) {
-	if os.Getenv("TESTING_MODE") == "true" {
-		var result Call
-		if err := loadTestData("create-call-response.json", &result); err != nil {
-			return nil, err
-		}
-		return &result, nil
-	}
-
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -82,14 +64,6 @@ func CreateCall(ctx context.Context, call Call) (*Call, error) {
 
 // GetCall retrieves a call by its ID
 func GetCall(ctx context.Context, id string) (*Call, error) {
-	if os.Getenv("TESTING_MODE") == "true" {
-		var result Call
-		if err := loadTestData("get-call-response.json", &result); err != nil {
-			return nil, err
-		}
-		return &result, nil
-	}
-
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
