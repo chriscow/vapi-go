@@ -131,7 +131,9 @@ type Analysis struct {
 	Summary             *string         `json:"summary,omitempty"`
 	StructuredData      map[string]any  `json:"structuredData,omitempty"`
 	StructuredDataMulti json.RawMessage `json:"structuredDataMulti,omitempty"`
-	SuccessEvaluation   *string         `json:"successEvaluation,omitempty"`
+	// I had a *string here as that is what the documentation says, but I started getting:
+	// "cannot unmarshal bool into Go struct field Analysis.analysis.successEvaluation of type string"
+	SuccessEvaluation any `json:"successEvaluation,omitempty"`
 }
 
 // AnalysisCostBreakdown represents the cost breakdown for analysis
